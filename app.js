@@ -2,6 +2,7 @@
 const API_URL = 'https://67d9377700348dd3e2aa2e6c.mockapi.io/api/v1/todos'; // MockAPI endpoint
 let todos = [];
 let currentFilter = 'all';
+let isOnline = navigator.onLine;
 
 // Elementos DOM
 const todoInput = document.getElementById('todo-input');
@@ -13,21 +14,61 @@ const filterButtons = document.querySelectorAll('.filter-btn');
 
 // Registrar Service Worker
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js') // Cambiar la ruta a relativa
-      .then(registration => {
-        console.log('Service Worker registrado con éxito:', registration.scope);
-      })
-      .catch(error => {
-        console.log('Error al registrar el Service Worker:', error);
-      });
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('Service Worker registrado con éxito:', registration.scope);
+      
+      // Solicitar permiso para notificaciones en PWA
+      if ('Notification' in window) {
+        Notification.requestPermission();
+      }
+    } catch (error) {
+      console.log('Error al registrar el Service Worker:', error);
+    }
   });
+}
+
+// Monitorear el estado de la conexión
+window.addEventListener('online', handleConnectionChange);
+window.addEventListener('offline', handleConnectionChange);
+
+function handleConnectionChange(event) {
+  isOnline = navigator.onLine;
+  if (isOnline) {
+    console.log('¡Conexión recuperada!');
+    document.body.classList.remove('offline');
+    // Intentar sincronizar datos
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      navigator.serviceWorker.ready
+        .then(registration => registration.sync.register('sync-todos'))
+        .catch(err => console.log('Falló la sincronización', err));
+    } else {
+      // Hacer fetch manual de datos
+      fetchTodos();
+    }
+  } else {
+    console.log('Sin conexión. La app está en modo offline.');
+    document.body.classList.add('offline');
+    showOfflineNotification();
+  }
+}
+
+// Mostrar notificación de modo offline
+function showOfflineNotification() {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('Todo App', {
+      body: 'Estás en modo offline. Los cambios se sincronizarán cuando vuelvas a estar online.',
+      icon: '/icons/icon-192x192.png'
+    });
+  }
 }
 
 // Cargar todos al iniciar la aplicación
 document.addEventListener('DOMContentLoaded', () => {
     fetchTodos();
     setupEventListeners();
+    handleConnectionChange(); // Verificar estado inicial
 });
 
 // Configurar todos los event listeners
@@ -68,7 +109,13 @@ async function fetchTodos() {
         renderTodos();
     } catch (error) {
         console.error('Error:', error);
-        alert('No se pudieron cargar las tareas. Intente nuevamente.');
+        
+        // Si hay error, intentamos obtener del caché
+        if (!navigator.onLine) {
+            console.log('Estamos offline, usando datos en caché si hay disponibles');
+        } else {
+            alert('No se pudieron cargar las tareas. Intente nuevamente.');
+        }
     }
 }
 
