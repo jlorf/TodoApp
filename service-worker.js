@@ -1,52 +1,46 @@
-const CACHE_NAME = 'todoapp-cache-v1';
+const CACHE_NAME = 'todo-app-v1';
 const urlsToCache = [
-  './',
-  './index.html',
-  './styles/main.css',
-  './scripts/main.js',
-  './manifest.json',
-  './icons/icon-192x192.png',
-  './icons/icon-512x512.png'
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/app.js',
+  '/manifest.json'
 ];
 
+// Instalación del Service Worker y caché de recursos
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
+        console.log('Caché abierta');
         return cache.addAll(urlsToCache);
       })
   );
 });
 
+// Estrategia de caché: Network first, fallback to cache
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then(response => {
-        // Devuelve la respuesta cacheada si existe
-        if (response) {
-          return response;
-        }
-        return fetch(event.request)
-          .then(response => {
-            // Si la respuesta no es válida, devuelve la respuesta original
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Clone la respuesta para guardarla en caché y devolverla
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
+        // Clona la respuesta
+        const responseClone = response.clone();
+        
+        caches.open(CACHE_NAME)
+          .then(cache => {
+            // Guarda la respuesta en la caché
+            cache.put(event.request, responseClone);
           });
+        return response;
+      })
+      .catch(() => {
+        // Si falla la red, busca en la caché
+        return caches.match(event.request);
       })
   );
 });
 
+// Actualiza el caché cuando hay una nueva versión del SW
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(

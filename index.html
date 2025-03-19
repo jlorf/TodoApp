@@ -11,12 +11,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Todo App">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Todo App">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Favicons e iconos para iOS -->
-    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
 </head>
 <body>
     <div class="container">
@@ -55,6 +54,45 @@
                     });
             });
         }
+
+        // Mostrar banner de instalación personalizado (opcional)
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevenir que Chrome muestre automáticamente el prompt
+            e.preventDefault();
+            // Guardar el evento para usarlo más tarde
+            deferredPrompt = e;
+            
+            // Crear un botón de instalación para mejorar la experiencia
+            const installBtn = document.createElement('button');
+            installBtn.textContent = 'Instalar App';
+            installBtn.className = 'install-button';
+            installBtn.style.position = 'fixed';
+            installBtn.style.bottom = '20px';
+            installBtn.style.right = '20px';
+            installBtn.style.padding = '10px 15px';
+            installBtn.style.backgroundColor = '#4a90e2';
+            installBtn.style.color = 'white';
+            installBtn.style.border = 'none';
+            installBtn.style.borderRadius = '5px';
+            installBtn.style.zIndex = '999';
+            
+            installBtn.addEventListener('click', (e) => {
+                // Mostrar prompt de instalación
+                deferredPrompt.prompt();
+                
+                // Esperar a que el usuario responda al prompt
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('Usuario aceptó la instalación');
+                        document.body.removeChild(installBtn);
+                    }
+                    deferredPrompt = null;
+                });
+            });
+            
+            document.body.appendChild(installBtn);
+        });
     </script>
 </body>
 </html>
