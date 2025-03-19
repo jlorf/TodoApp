@@ -1,5 +1,5 @@
 // Constantes y variables
-const API_URL = 'https://67d9377700348dd3e2aa2e6c.mockapi.io/todos'; // MockAPI endpoint
+const API_URL = 'https://67d9377700348dd3e2aa2e6c.mockapi.io/api/v1/todos'; // MockAPI endpoint
 let todos = [];
 let currentFilter = 'all';
 
