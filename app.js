@@ -1,5 +1,5 @@
 // Constantes y variables
-const API_URL = 'https://67d9377700348dd3e2aa2e6c.mockapi.io/api/v1/todos'; // MockAPI endpoint
+const API_URL = 'https://654a774c1f197d51e4920358.mockapi.io/todos'; // MockAPI endpoint
 let todos = [];
 let currentFilter = 'all';
 
@@ -10,6 +10,19 @@ const todoList = document.getElementById('todo-list');
 const itemsLeft = document.getElementById('items-left');
 const clearCompletedButton = document.getElementById('clear-completed');
 const filterButtons = document.querySelectorAll('.filter-btn');
+
+// Registrar Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('Service Worker registrado con éxito:', registration.scope);
+      })
+      .catch(error => {
+        console.log('Error al registrar el Service Worker:', error);
+      });
+  });
+}
 
 // Cargar todos al iniciar la aplicación
 document.addEventListener('DOMContentLoaded', () => {
